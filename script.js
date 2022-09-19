@@ -312,7 +312,6 @@ languagesListButton.addEventListener("click", () => {
 
 // add event listener when user click on 'Render Holidays'
 holidaysButton.addEventListener("click", () => {
-  // todo todo todo todo todo todo
   renderHolidates();
 
   inputCountryQueryValue = inputCountryQuery.value.trim() || "";
