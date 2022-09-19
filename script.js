@@ -4,8 +4,16 @@ const DEFAULT_YEAR = "2021";
 const DEFAULT_DAY = "";
 const DEFAULT_MONTH = "";
 const DEFAULT_COUNTRY_CODE = "VN";
-const DEFAULT_LANGUAGE = "vi";
-const DEFAULT_SEARCH = "";
+const DEFAULT_LANGUAGE = "en";
+const SEARCH_VALUE_MIN_LENGTH = 5;
+
+// Spinner
+const spinner = document.getElementById("spinner");
+
+// function to check search parameter is valid
+const checkValidSearchParameter = (searchValue) => {
+  return searchValue.trim().length >= SEARCH_VALUE_MIN_LENGTH ? true : false;
+};
 
 // function to get countries list from api
 const getCountriesList = async () => {
@@ -61,32 +69,77 @@ const getLanguagesList = async () => {
 
 // getLanguagesList().then((result) => console.log(result));
 
+// query input
+const inputSearchQuery = document.querySelector("#search-query");
+const inputYearQuery = document.querySelector("#year-query");
+const inputMonthQuery = document.querySelector("#month-query");
+const inputDayQuery = document.querySelector("#day-query");
+const inputCountryQuery = document.querySelector("#country-query");
+const inputLanguageQuery = document.querySelector("#language-query");
+
+let inputCountryQueryValue;
+let inputSearchQueryValue;
+let inputYearQueryValue;
+let inputMonthQueryValue;
+let inputDayQueryValue;
+let inputLanguageQueryValue;
+
 // function to get holidates list from api (default country is VN if empty)
-const getHolidatesList = async (
-  countryCode,
-  year,
-  language,
-  day,
-  month,
-  search
-) => {
+const getHolidatesList = async () => {
+  inputCountryQueryValue = inputCountryQuery.value.trim() || "";
+  inputSearchQueryValue = inputSearchQuery.value.trim() || "";
+  inputYearQueryValue = inputYearQuery.value.trim() || "";
+  inputMonthQueryValue = inputMonthQuery.value.trim() || "";
+  inputDayQueryValue = inputDayQuery.value.trim() || "";
+  inputLanguageQueryValue = inputLanguageQuery.value.trim() || "";
+
   try {
-    let url = "";
-    if (countryCode) {
-      if (search && search.length >= 5) {
-        url = `${BASE_URL}/holidays?pretty&key=${API_KEY}&country=${countryCode}&year=${year}&language=${language}&day=${day}&month=${month}&search=${search}`;
-      } else {
-        url = `${BASE_URL}/holidays?pretty&key=${API_KEY}&country=${countryCode}&year=${year}&language=${language}&day=${day}&month=${month}`;
-      }
+    let queryParameters = "";
+
+    if (inputYearQueryValue) {
+      queryParameters += `&year=${inputYearQueryValue}`;
     } else {
-      if (search && search.length >= 5) {
-        url = `${BASE_URL}/holidays?pretty&key=${API_KEY}&year=${year}&language=${language}&day=${day}&month=${month}&search=${search}`;
+      queryParameters += `&year=${DEFAULT_YEAR}`;
+    }
+
+    if (inputMonthQueryValue) {
+      queryParameters += `&month=${inputMonthQueryValue}`;
+    }
+
+    if (inputDayQueryValue) {
+      queryParameters += `&day=${inputDayQueryValue}`;
+    }
+
+    if (
+      inputSearchQueryValue &&
+      checkValidSearchParameter(inputSearchQueryValue)
+    ) {
+      if (inputCountryQueryValue) {
+        queryParameters += `&search=${inputSearchQueryValue}&country=${inputCountryQueryValue}`;
       } else {
-        url = `${BASE_URL}/holidays?pretty&key=${API_KEY}&year=${year}&language=${language}&day=${day}&month=${month}`;
+        queryParameters += `&search=${inputSearchQueryValue}`;
       }
     }
 
-    console.log(url);
+    if (
+      !inputSearchQueryValue ||
+      !checkValidSearchParameter(inputSearchQueryValue)
+    ) {
+      if (inputCountryQueryValue) {
+        queryParameters += `&country=${inputCountryQueryValue}`;
+      } else {
+        queryParameters += `&country=${DEFAULT_COUNTRY_CODE}`;
+      }
+    }
+
+    if (inputLanguageQueryValue) {
+      queryParameters += `&language=${inputLanguageQueryValue}`;
+    } else {
+      queryParameters += `&language=${DEFAULT_LANGUAGE}`;
+    }
+
+    const url = `${BASE_URL}/holidays?pretty&key=${API_KEY}${queryParameters}`;
+    console.log(`Url request is: ${url}`);
     const response = await fetch(url);
 
     if (response.ok) {
@@ -101,14 +154,6 @@ const getHolidatesList = async (
 };
 
 // getHolidatesList("ZW").then((result) => console.log(result));
-
-// query input
-const inputSearchQuery = document.querySelector("#search-query");
-const inputYearQuery = document.querySelector("#year-query");
-const inputMonthQuery = document.querySelector("#month-query");
-const inputDayQuery = document.querySelector("#day-query");
-const inputCountryQuery = document.querySelector("#country-query");
-const inputLanguageQuery = document.querySelector("#language-query");
 
 // countries
 const countriesListButton = document.querySelector("#countries-list-btn");
@@ -130,8 +175,15 @@ let countriesListArray = [];
 // function is used to render country list into ui
 const renderCountries = async () => {
   try {
+    // loading spinner
+    spinner.removeAttribute("hidden");
+
     // fetch all the countries by using function getCountriesList
     countriesListArray = await getCountriesList();
+
+    // remove spinner
+    spinner.setAttribute("hidden", "");
+
     if (!countriesListArray.length) {
       console.log("Cannot get countries list from API.");
       return;
@@ -158,8 +210,15 @@ let languagesListArray = [];
 // function is used to render language list into ui
 const renderLanguages = async () => {
   try {
+    // loading spinner
+    spinner.removeAttribute("hidden");
+
     // fetch all languages by using function getLanguagesList
     languagesListArray = await getLanguagesList();
+
+    // remove spinner
+    spinner.setAttribute("hidden", "");
+
     if (!languagesListArray.length) {
       console.log("Cannot get languages list from API.");
       return;
@@ -185,24 +244,17 @@ const renderLanguages = async () => {
 
 let holidatesListArray = [];
 // function to render holidates list into ui
-const renderHolidates = async (
-  countryCode,
-  year = DEFAULT_YEAR,
-  language = DEFAULT_LANGUAGE,
-  day = DEFAULT_DAY,
-  month = DEFAULT_MONTH,
-  search = DEFAULT_SEARCH
-) => {
+const renderHolidates = async () => {
   try {
+    // loading spinner
+    spinner.removeAttribute("hidden");
+
     // fetch all holidates list by using function getHolidatesList
-    holidatesListArray = await getHolidatesList(
-      countryCode,
-      year,
-      language,
-      day,
-      month,
-      search
-    );
+    holidatesListArray = await getHolidatesList();
+
+    // remove spinner
+    spinner.setAttribute("hidden", "");
+
     if (!holidatesListArray.length) {
       console.log("No Holidates Found.");
       return;
@@ -230,7 +282,7 @@ const renderHolidates = async (
 
 let countryName = "";
 // function to update country name when user click render holiday
-const updateCountryName = async (countryCode) => {
+const updateCountryName = async (countryCode = DEFAULT_COUNTRY_CODE) => {
   try {
     let countriesArray = await getCountryBasedOnCountryCode(countryCode);
     if (!countriesArray.length) {
@@ -241,7 +293,7 @@ const updateCountryName = async (countryCode) => {
     countryName = countriesArray[0].name;
     if (countryName) {
       // reset h3 text content
-      h3HolidatesList.textContent = `Holidays of a ${countryName}`;
+      h3HolidatesList.textContent = `Holidays of ${countryName}`;
     }
   } catch (error) {
     console.log(`Error message: ${error}`);
@@ -260,108 +312,31 @@ languagesListButton.addEventListener("click", () => {
 
 // add event listener when user click on 'Render Holidays'
 holidaysButton.addEventListener("click", () => {
-  let inputYearQueryValue = inputYearQuery.value.trim();
-  let inputMonthQueryValue = inputMonthQuery.value.trim();
-  let inputDayQueryValue = inputDayQuery.value.trim();
-  let inputCountryQueryValue = inputCountryQuery.value.trim();
-  let inputLanguageQueryValue = inputLanguageQuery.value.trim();
-  let inputSearchQueryValue = inputSearchQuery.value.trim();
+  // todo todo todo todo todo todo
+  renderHolidates();
 
-  console.log(inputSearchQueryValue);
-  console.log(inputYearQueryValue);
-  console.log(inputMonthQueryValue);
-  console.log(inputDayQueryValue);
-  console.log(inputCountryQueryValue);
-  console.log(inputLanguageQueryValue);
+  inputCountryQueryValue = inputCountryQuery.value.trim() || "";
+  inputSearchQueryValue = inputSearchQuery.value.trim() || "";
 
-  // If all **input boxes** are empty, render a list of holidays of `VietNam`
-  if (
-    !inputSearchQueryValue &&
-    !inputYearQueryValue &&
-    !inputMonthQueryValue &&
-    !inputDayQueryValue &&
-    !inputCountryQueryValue &&
-    !inputLanguageQueryValue
-  ) {
-    console.log("case 1");
-    renderHolidates(DEFAULT_COUNTRY_CODE);
-    updateCountryName(DEFAULT_COUNTRY_CODE);
-  }
-
-  // If ONLY **Country box** is input with correct _country code_, render a list of holidays of that country for the year `2021`
-  // The title `Holiday of a Country` must be changed to the actual country requested. eg
-  if (
-    inputCountryQueryValue &&
-    !inputSearchQueryValue &&
-    !inputYearQueryValue &&
-    !inputMonthQueryValue &&
-    !inputDayQueryValue &&
-    !inputLanguageQueryValue
-  ) {
-    console.log("case 2");
-    renderHolidates(inputCountryQueryValue);
-    updateCountryName(inputCountryQueryValue);
-  }
-
-  //   - When other inputs (Country, Languages) are present, the result is combined with all the queries.
-  if (inputLanguageQueryValue && inputCountryQueryValue) {
-    inputYearQueryValue = inputYearQueryValue || DEFAULT_YEAR;
-    inputDayQueryValue = inputDayQueryValue || DEFAULT_DAY;
-    inputMonthQueryValue = inputMonthQueryValue || DEFAULT_MONTH;
-    inputSearchQueryValue = inputSearchQueryValue || DEFAULT_SEARCH;
-
-    console.log("case 3");
-    renderHolidates(
-      inputCountryQueryValue,
-      inputYearQueryValue,
-      inputLanguageQueryValue,
-      inputDayQueryValue,
-      inputMonthQueryValue,
-      inputSearchQueryValue
-    );
-    updateCountryName(inputCountryQueryValue);
-  }
-
-  // When adding `Day, Year, Month` then clicking the button, the user sees a list of holidays of the chosen country (default is Viet Nam) for that exact day.
-  if (inputDayQueryValue && inputMonthQueryValue) {
-    inputCountryQueryValue = inputCountryQueryValue || DEFAULT_COUNTRY_CODE;
-    inputYearQueryValue = inputYearQueryValue || DEFAULT_YEAR;
-    inputLanguageQueryValue = inputLanguageQueryValue || DEFAULT_LANGUAGE;
-    inputSearchQueryValue = inputSearchQueryValue || DEFAULT_SEARCH;
-
-    console.log("case 4");
-    renderHolidates(
-      inputCountryQueryValue,
-      inputYearQueryValue,
-      inputLanguageQueryValue,
-      inputDayQueryValue,
-      inputMonthQueryValue,
-      inputSearchQueryValue
-    );
-    updateCountryName(inputCountryQueryValue);
-  }
-
-  // testing testing testing testing
   if (
     inputSearchQueryValue &&
-    inputSearchQueryValue.length >= 5 &&
-    !inputCountryQueryValue
+    checkValidSearchParameter(inputSearchQueryValue)
   ) {
-    inputYearQueryValue = inputYearQueryValue || DEFAULT_YEAR;
-    inputDayQueryValue = inputDayQueryValue || DEFAULT_DAY;
-    inputMonthQueryValue = inputMonthQueryValue || DEFAULT_MONTH;
-
-    console.log("case 5");
-    renderHolidates(
-      inputCountryQueryValue,
-      inputYearQueryValue,
-      inputLanguageQueryValue,
-      inputDayQueryValue,
-      inputMonthQueryValue,
-      inputSearchQueryValue
-    );
-    updateCountryName("Accross Countries");
+    if (inputCountryQueryValue) {
+      updateCountryName(inputCountryQueryValue);
+    } else {
+      h3HolidatesList.textContent = `Holidays of all countries`;
+    }
   }
 
-  // todo todo todo todo todo todo todo todo todo todo todo todo
+  if (
+    !inputSearchQueryValue ||
+    !checkValidSearchParameter(inputSearchQueryValue)
+  ) {
+    if (inputCountryQueryValue) {
+      updateCountryName(inputCountryQueryValue);
+    } else {
+      updateCountryName();
+    }
+  }
 });
